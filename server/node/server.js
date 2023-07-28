@@ -53,6 +53,37 @@ app.post('/create-payment-intent', async (req, res) => {
   }
 });
 
+
+app.post('/create-session', async (req, res) => {
+  try {
+    /**
+     * We check email in our database if exists we'll use this customer id otherwise create a new customer and will use customer id
+     */
+    const customer = await stripe.customers.create({ name: req.body.name, email: req.body.email })
+    const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
+      success_url: 'http://localhost:4242/return.html',
+      line_items: [
+        {
+          price: req.body.price,
+          quantity: req.body.quantity,
+        },
+      ],
+      mode: 'payment',
+      ui_mode: 'custom',
+    });
+
+    res.send({
+      sessionId: session.id,
+    });
+  } catch (e) {
+    return res.status(400).send({
+      error: {
+        message: e.message,
+      },
+    });
+  }
+})
 app.listen(4242, () =>
   console.log(`Node server listening at http://localhost:4242`)
 );
